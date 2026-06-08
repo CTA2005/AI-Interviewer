@@ -9,6 +9,7 @@
     <InterviewRoom 
       v-else-if="currentView === 'interview'" 
       :jobTitle="selectedJob"
+      :questionType="selectedType"
       @end-interview="goToReport" 
       @cancel-interview="goToDashboard" 
     />
@@ -32,11 +33,13 @@ import ReportCard from './components/Report.vue';
 
 const currentView = ref('dashboard');
 const selectedJob = ref('');
+const selectedType = ref('');
 const interviewResult = ref(null); // 存放後端傳回的評分結果
 
 // 切換到面試室
 const goToInterview = (payload) => {
   selectedJob.value = payload.job;
+  selectedType.value = payload.type;
   currentView.value = 'interview';
 };
 
