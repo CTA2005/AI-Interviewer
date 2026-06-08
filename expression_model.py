@@ -9,7 +9,7 @@ print("[INFO] 正在初始化視覺部門 (載入 cnn_emotion_model.keras 模型
 model = tf.keras.models.load_model("cnn_emotion_model.keras")
 print("[SUCCESS] 全新 CNN 臉部表情辨識模型載入完成！")
 
-# ⚠️ 注意：請確認這 7 個情緒的排列順序，和你「訓練新模型時 (train_generator.class_indices)」的標籤順序完全一致！
+#注意：請確認這 7 個情緒的排列順序，和你「訓練新模型時 (train_generator.class_indices)」的標籤順序完全一致！
 EMOTIONS = ["生氣 (Angry)", "厭惡 (Disgust)", "恐懼 (Fear)", "開心 (Happy)", "難過 (Sad)", "驚訝 (Surprise)", "平靜 (Neutral)"]
 
 def analyze_face(image_bytes: bytes) -> str:
