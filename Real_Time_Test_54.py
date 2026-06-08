@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, classification_report
 
-# 定義表情標籤
+#定義表情標籤
 EMOTIONS = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
 # ==========================================
@@ -21,7 +21,7 @@ def load_data(base_dir):
     train_dir = os.path.join(base_dir, 'train')
     test_dir = os.path.join(base_dir, 'test')
     
-    # 設定隨機種子，確保訓練集與驗證集切分時不會重疊
+    #設定隨機種子，確保訓練集與驗證集切分時不會重疊
     seed = 42
     
     print("正在載入訓練集圖片")
@@ -60,23 +60,23 @@ def load_data(base_dir):
         shuffle=False
     )
     
-    # 將圖片像素從 0~255 歸一化到 0~1
+    #將圖片像素從 0~255 歸一化到 0~1
     normalization_layer = layers.Rescaling(1./255)
     train_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))
     val_ds = val_ds.map(lambda x, y: (normalization_layer(x), y))
     test_ds = test_ds.map(lambda x, y: (normalization_layer(x), y))
     
-    # 建立資料增強流水線
+    #建立資料增強流水線
     data_augmentation = Sequential([
         layers.RandomFlip("horizontal"),
         layers.RandomRotation(0.1),
         layers.RandomTranslation(0.1, 0.1)
     ])
     
-    # 將資料增強應用在訓練集上
+    #將資料增強應用在訓練集上
     train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
     
-    # 快取與預取數據，提升效能
+    #快取與預取數據，提升效能
     train_ds = train_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
     val_ds = val_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
     test_ds = test_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -88,7 +88,7 @@ def load_data(base_dir):
 # ==========================================
 def build_model():
     model = Sequential([
-        # 第一層卷積
+        #第一層卷積
         layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(48, 48, 1)),
         layers.BatchNormalization(),
         layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
@@ -96,7 +96,7 @@ def build_model():
         layers.MaxPooling2D(pool_size=(2, 2)),
         layers.Dropout(0.25),
 
-        # 第二層卷積
+        #第二層卷積
         layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
         layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
@@ -104,7 +104,7 @@ def build_model():
         layers.MaxPooling2D(pool_size=(2, 2)),
         layers.Dropout(0.25),
 
-        # 全連接層
+        #全連接層
         layers.Flatten(),
         layers.Dense(128, activation='relu'),
         layers.BatchNormalization(),
@@ -128,7 +128,7 @@ def plot_history(history):
 
     plt.figure(figsize=(12, 5))
 
-    # 1. 準確率曲線
+    #1. 準確率曲線
     plt.subplot(1, 2, 1)
     plt.plot(epochs_range, acc, label='Training Accuracy', color='blue')
     plt.plot(epochs_range, val_acc, label='Validation Accuracy', color='orange')
@@ -137,7 +137,7 @@ def plot_history(history):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
 
-    # 2. 損失曲線
+    #2. 損失曲線
     plt.subplot(1, 2, 2)
     plt.plot(epochs_range, loss, label='Training Loss', color='blue')
     plt.plot(epochs_range, val_loss, label='Validation Loss', color='orange')
@@ -147,7 +147,7 @@ def plot_history(history):
     plt.ylabel('Loss')
 
     plt.tight_layout()
-    plt.savefig('learning_curve.png') # 自動存檔，專題報告可以用
+    plt.savefig('learning_curve.png')
     plt.show()
 
 # ==========================================
@@ -156,24 +156,24 @@ def plot_history(history):
 def plot_confusion_matrix(model, test_ds):
     print("\n正在擷取測試集真實標籤並進行預測...")
     
-    # 從 tf.data.Dataset 中取出所有的真實標籤
+    #從 tf.data.Dataset 中取出所有的真實標籤
     y_true = []
     for _, labels in test_ds:
         y_true.extend(np.argmax(labels.numpy(), axis=1))
     y_true = np.array(y_true)
     
-    # 進行模型預測
+    #進行模型預測
     y_pred_probs = model.predict(test_ds)
     y_pred = np.argmax(y_pred_probs, axis=1)
     
-    # 計算混淆矩陣
+    #計算混淆矩陣
     cm = confusion_matrix(y_true, y_pred)
     
-    # 列印文字版的分類報告 (包含 Precision, Recall, F1-score)
+    #列印文字版的分類報告 (包含 Precision, Recall, F1-score)
     print("\n--- 分類報告 Classification Report ---")
     print(classification_report(y_true, y_pred, target_names=EMOTIONS))
     
-    # 繪製熱條圖混淆矩陣
+    #繪製熱條圖混淆矩陣
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
                 xticklabels=EMOTIONS, yticklabels=EMOTIONS)
@@ -181,7 +181,7 @@ def plot_confusion_matrix(model, test_ds):
     plt.ylabel('True Label (Actual)')
     plt.xlabel('Predicted Label')
     plt.tight_layout()
-    plt.savefig('confusion_matrix.png') # 自動存檔，專題報告可以用
+    plt.savefig('confusion_matrix.png')
     plt.show()
 
 # ==========================================
@@ -204,21 +204,24 @@ def start_realtime_cnn(model_path):
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
         
         for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2) #繪出臉部方框 (0,255,0)代表綠色方框 2代表方框線條粗細
             
+            #把只有人臉的區塊切出來
             roi_gray = gray[y:y+h, x:x+w]
             roi_gray = cv2.resize(roi_gray, (48, 48))
             roi_gray = roi_gray.astype("float") / 255.0
             roi_gray = np.expand_dims(roi_gray, axis=0)
-            roi_gray = np.expand_dims(roi_gray, axis=-1) # 確保形狀為 (1, 48, 48, 1)
+            roi_gray = np.expand_dims(roi_gray, axis=-1) #確保形狀為 (1, 48, 48, 1)
             
-            preds = model.predict(roi_gray, verbose=0)[0]
-            label_id = np.argmax(preds)
-            confidence = preds[label_id]
+            preds = model.predict(roi_gray, verbose=0)[0] #preds儲存每種表情的預測機率
+            label_id = np.argmax(preds) #np.argmax找preds最大索引值
+            confidence = preds[label_id] #將最大機率數值取出並存進confidence(信心度)
             
+            #把即時預測文字印在畫面上
             text = f"{EMOTIONS[label_id]} ({confidence*100:.1f}%)"
             cv2.putText(frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
             
+        #把處理好的畫面秀出
         cv2.imshow('Real-time Emotion CNN', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'): break
             
