@@ -34,13 +34,14 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
-  jobTitle: String
+  jobTitle: String,
+  questionType: String
 });
 
 const emit = defineEmits(['end-interview', 'cancel-interview']);
 
 const videoElement = ref(null);
-const snapCanvas = ref(null); // 🔥 綁定快門
+const snapCanvas = ref(null); //綁定快門
 const currentQuestion = ref('正在準備問題...');
 const isLoading = ref(true);
 const isRecording = ref(false);
@@ -49,7 +50,7 @@ let mediaStream = null;
 let mediaRecorder = null;
 let audioChunks = [];
 
-// 🔥 新增：表情追蹤變數
+//新增：表情追蹤變數
 const emotionLog = ref([]);
 let expressionInterval = null;
 
@@ -65,9 +66,26 @@ onMounted(async () => {
     if (videoElement.value) {
       videoElement.value.srcObject = mediaStream;
     }
+
+    //新增：為每一個影音軌道裝上「斷線警報器」
+    mediaStream.getTracks().forEach(track => {
+      track.onended = () => {
+        console.warn(`偵測到 ${track.kind} 軌道中斷！`);
+        
+        // 1. 溫柔地警告使用者
+        alert("偵測到攝影機或麥克風權限被關閉，或硬體已斷線！面試將強制結束。");
+        
+        // 2. 清理戰場：確保定時器有關閉，避免背景繼續跑
+        clearInterval(expressionInterval);
+        
+        // 3. 安全撤退：觸發返回首頁的指令
+        emit('cancel-interview'); 
+      };
+    });
+
   } catch (error) {
     alert('無法開啟攝影機與麥克風！請允許權限後再試一次。');
-    emit('end-interview', null); 
+    emit('cancel-interview');
     return;
   }
   await fetchQuestionFromAI();
@@ -86,7 +104,7 @@ const fetchQuestionFromAI = async () => {
     const response = await fetch('http://127.0.0.1:8000/api/generate-question', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ job_title: props.jobTitle }) 
+      body: JSON.stringify({ job_title: props.jobTitle, question_type: props.questionType}) 
     });
     const data = await response.json();
     if (data.status === 'success') {
@@ -101,7 +119,7 @@ const fetchQuestionFromAI = async () => {
   }
 };
 
-// 🔥 新增：截圖並發送給後端分析表情
+//新增：截圖並發送給後端分析表情
 const captureAndAnalyzeFace = () => {
   if (!videoElement.value || !snapCanvas.value) return;
 
@@ -155,7 +173,7 @@ const startRecording = () => {
   mediaRecorder.start();
   isRecording.value = true;
 
-  // 🔥 開始錄音時，每 3 秒偷拍一張照片分析表情
+  //開始錄音時，每 3 秒偷拍一張照片分析表情
   expressionInterval = setInterval(() => {
     captureAndAnalyzeFace();
   }, 3000);
@@ -164,11 +182,11 @@ const startRecording = () => {
 const stopRecordingAndEvaluate = () => {
   isRecording.value = false;
   mediaRecorder.stop();
-  clearInterval(expressionInterval); // 🔥 結束錄音時，停止偷拍
+  clearInterval(expressionInterval); //結束錄音時，停止偷拍
 
   mediaRecorder.onstop = async () => {
     const originalQuestion = currentQuestion.value;
-    const finalEmotion = getDominantEmotion(emotionLog.value); // 🔥 結算主要表情
+    const finalEmotion = getDominantEmotion(emotionLog.value); //結算主要表情
 
     currentQuestion.value = "正在上傳錄音與分析表情 (這可能需要數十秒)...";
     isLoading.value = true;
@@ -178,7 +196,7 @@ const stopRecordingAndEvaluate = () => {
     
     formData.append('my_audio', audioBlob, 'answer.webm');
     formData.append('question', originalQuestion);
-    formData.append('emotion', finalEmotion); // 🔥 把算出來的表情裝箱！
+    formData.append('emotion', finalEmotion); //把算出來的表情裝箱！
 
     try {
       const response = await fetch('http://127.0.0.1:8000/api/upload-audio', {
@@ -188,7 +206,7 @@ const stopRecordingAndEvaluate = () => {
       const result = await response.json();
       
       if (result.status === 'success') {
-        // 🔥 修正：把 emotion 傳給 App.vue
+        //修正：把 emotion 傳給 App.vue
         emit('end-interview', {
           transcript: result.transcript,
           feedback: result.feedback,
