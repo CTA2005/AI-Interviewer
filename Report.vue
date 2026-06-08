@@ -34,12 +34,11 @@ defineProps({
     type: String,
     required: true
   },
-  // 🔥 新增：接收面試時的主要表情
+  //新增：接收面試時的主要表情
   emotion: {
     type: String,
     default: "未偵測"
   }
-  // 🗑️ 注意：這裡已經把 score 拿掉了！
 });
 
 // 定義發送給外部的事件 (例如：重新面試)
