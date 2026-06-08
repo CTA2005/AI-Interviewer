@@ -14,7 +14,7 @@ import uvicorn
 import os
 import json
 
-# 🔥 核心魔法：引入我們的雙引擎！
+# 核心魔法：引入我們的雙引擎！
 from whisper_service import transcribe_audio
 from expression_model import analyze_face  # 新增：匯入視覺部門
 
@@ -48,15 +48,16 @@ os.makedirs("uploads", exist_ok=True)
 
 class JobRequest(BaseModel):
     job_title: str
+    question_type: str
 
 # ==========================================
 # 4. API 端點 (一)：生成面試題目 
 # ==========================================
 @app.post("/api/generate-question")
 async def generate_question(req: JobRequest):
-    print(f"\n[INFO] 準備生成【{req.job_title}】的面試題目...")
+    print(f"\n[INFO] 準備生成【{req.job_title}】的面試題目，類型：【{req.question_type}】...")
     template = PROMPTS["system_prompts"]["opening_question"]
-    system_prompt = template.format(job_title=req.job_title)
+    system_prompt = template.format(job_title=req.job_title, question_type=req.question_type)
     system_prompt += "【規則】如果該職位是亂碼或無意義字眼，請嚴厲回覆：『這似乎不是一個有效的職業，請重新輸入。』"
 
     try:
@@ -64,6 +65,7 @@ async def generate_question(req: JobRequest):
             model="meta/llama-3.1-8b-instruct",
             messages=[{"role": "user", "content": system_prompt}],
             temperature=0.7,
+            presence_penalty=0.6,
             max_tokens=100
         )
         question_text = completion.choices[0].message.content
@@ -73,7 +75,7 @@ async def generate_question(req: JobRequest):
 
 
 # ==========================================
-# 5. 🔥 新增 API 端點 (二)：處理臉部截圖
+# 5. 新增 API 端點 (二)：處理臉部截圖
 # ==========================================
 @app.post("/api/analyze-face")
 async def api_analyze_face(image: UploadFile = File(...)):
@@ -117,7 +119,7 @@ async def upload_audio(my_audio: UploadFile = File(...), question: str = Form(..
         raw_result = completion.choices[0].message.content
         ai_evaluation = json.loads(raw_result)
         
-        # 🔥 修正：把 emotion 加進回傳的包裹裡！
+        # 修正：把 emotion 加進回傳的包裹裡！
         return {
             "status": "success",
             "message": "評分完成！",
